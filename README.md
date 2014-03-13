@@ -16,4 +16,4 @@ indep.scm: the original, non-dependently-typed language
 dep.scm: the base dependently-typed language
 
 rich-dep.scm: dep.scm augmented with natural numbers & vectors, and an
-implementation of plus & append.
+implementation of plus & append. Only this file is actively maintained.
