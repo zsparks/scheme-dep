@@ -10,3 +10,10 @@ as close to the original implementation as possible, mostly for ease of writing.
 
 The original paper's homepage, with links to the paper & associated code
 (neither of which I am affiliated with), is http://www.andres-loeh.de/LambdaPi/
+
+indep.scm: the original, non-dependently-typed language
+
+dep.scm: the base dependently-typed language
+
+rich-dep.scm: dep.scm augmented with natural numbers & vectors, and an
+implementation of plus & append.
