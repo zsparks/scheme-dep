@@ -570,7 +570,9 @@
       [,e `(inf ,(parse-inf ctx e))])))
 
 ; for testing
-(define : (lambda (x y) x))
+(define-syntax :
+  (syntax-rules ()
+    ((_ a b) a)))
 (define x 'x)
 (define y 'y)
 (define a 'a)
@@ -578,6 +580,19 @@
 (define t 't) ; heh
 (define star 'star)
 (define pi (lambda (x y) `(pi ,x ,y)))
+(define nat 'nat)
+(define zero 'zero)
+(define succ (lambda (x) `(succ ,x)))
+(define nat-elim
+  (lambda (type base rec input)
+    (pmatch input
+      [zero base]
+      [(succ ,n) ((rec n) (nat-elim type base rec n))])))
+(define vec-elim
+  (lambda (elem-type motivator base-case rec-case len input)
+    (pmatch input
+      [(nil ,type) base-case]
+      [(cons ,type ,newlen ,x ,xs) (rec-case newlen x xs)])))
 
 (define default-context
   `( ((global x) . ,(vfree '(global a)))
@@ -585,20 +600,6 @@
      ((global a) . vstar) )
   )
 (define default-dyn '( (x . x) (y . y) ))
-
-; list of lists of terms, their expected types, static ctxs, and dynamic ctxs
-(define tests
-  (list
-    `(((: (lambda (x) x) (-> a a)) x) a ,default-context ,default-dyn)
-    `((( (: (lambda (x) (lambda (y) x)) (-> a (-> a a))) x) y)
-      a
-      ,default-context
-      ,default-dyn)
-    `( (((: (lambda (t) (lambda (x) x)) (pi (: t star) (-> t t))) a) x)
-       a ,default-context ,default-dyn
-      )
-    )
-  )
 
 (define plus
   '(:
@@ -636,6 +637,25 @@
      (pi (: t star) (pi (: l1 nat) (pi (: l2 nat)
        (-> (vec t l1) (-> (vec t l2) (vec t ((,plus l1) l2)))))))))
 
+; list of lists of terms, their expected types, static ctxs, and dynamic ctxs
+(define tests
+  (list
+    `(((: (lambda (x) x) (-> a a)) x) a ,default-context ,default-dyn)
+    `((( (: (lambda (x) (lambda (y) x)) (-> a (-> a a))) x) y)
+      a
+      ,default-context
+      ,default-dyn)
+    `( (((: (lambda (t) (lambda (x) x)) (pi (: t star) (-> t t))) a) x)
+       a ,default-context ,default-dyn
+      )
+    `( ((,plus (succ zero)) (succ zero)) nat () () )
+; tests as-implemented don't work, since they interact poorly with cons
+; TODO: change the name of "cons" to something I can bind to a macro
+; (append *does* work, though!)
+;    `( (((((,append a) (succ zero)) (succ zero)) (cons a zero x (nil a))) (cons a zero y (nil a))) (vec a (succ (succ zero))) ,default-context ,default-dyn )
+    )
+  )
+
 ; Take a raw term, parse it, infer its type in the default environment, then
 ; quote the type to print back out
 (define ti
@@ -654,6 +674,7 @@
     (list (ti x) (ei x))))
 
 ; Run and check a test
+; XXX: broken until I add enough stuff for "eval" to work
 (define run-test
   (lambda (test)
     (pmatch test
@@ -672,3 +693,10 @@
              (if (equal? (eval e) (eval OutSchemeExp))
                (void)
                "oh no, evaluation failure!"))))])))
+
+;; void is good!
+(define test-output (map run-test tests))
+
+;; testing append
+;; evaluates to (the equivalent of) '(x y)
+(define append-test (run-dep `(((((,append a) (succ zero)) (succ zero)) (cons a zero x (nil a))) (cons a zero y (nil a)))))
