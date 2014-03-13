@@ -174,7 +174,7 @@
       [(free ,Name)
         (pmatch (assoc Name Context)
           [(,key . ,Type) Type]
-          [#f (error "unknown identifier (in types)" Name)])]
+          [#f (error "unknown identifier (in types) ~s" Name)])]
       [star 'vstar]
       [(pi ,TermCheck1 ,TermCheck2)
        (begin
@@ -638,14 +638,12 @@
 
 ; Take a raw term, parse it, infer its type in the default environment, then
 ; quote the type to print back out
-; TODO: unparse it, too!
 (define ti
   (lambda (x)
     (unparse-check (quot0 (type-infer 0 default-context (parse-inf '() x))) '())))
 
 ; Take a raw term, evaluate it (assuming it typechecks) in the default
 ; environment, then quote the result to print back out
-; TODO: unparse it, too!
 (define ei
   (lambda (x)
     (unparse-check (quot0 (eval-inf (parse-inf '() x) default-dyn)) '())))
@@ -664,16 +662,13 @@
          ([TermInf (parse-inf '() e)]
           [OutType (type-infer 0 s TermInf)]
           [OutQuotType (quot0 OutType)]
-          [ExpType (parse-inf s t)])
-         (if (not (equal? OutQuotType (parse-check s t)))
+          [ExpType (parse-check '() t)])
+         (if (not (equal? OutQuotType (parse-check '() t)))
            `("type mismatch, oh no" ,OutQuotType ,ExpType)
            (let*
              ([OutVal (eval-inf TermInf d)]
               [OutExp (quot0 OutVal)]
-              [OutSchemeExp (unparse-check '() OutExp)])
+              [OutSchemeExp (unparse-check OutExp '())])
              (if (equal? (eval e) (eval OutSchemeExp))
                (void)
                "oh no, evaluation failure!"))))])))
-
-
-
